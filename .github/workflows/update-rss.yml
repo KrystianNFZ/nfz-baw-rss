@@ -1,0 +1,50 @@
+name: Aktualizacja RSS NFZ
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v4
+
+      - name: Uruchom generator RSS
+        run: python generate_rss.py
+
+      - name: Przygotuj stronę
+        run: |
+          mkdir public
+          cp nfz.xml public/nfz.xml
+
+      - name: Konfiguracja GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Przygotuj artefakt
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+
+      - name: Publikuj RSS
+        id: deployment
+        uses: actions/deploy-pages@v4
